@@ -27,6 +27,7 @@ jobs:
           java-version: '17'
       - name: Conferir Gradle Wrapper
         run: echo '2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
+      - uses: android-actions/setup-android@v3
       - name: Instalar plataforma e ferramentas Android
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
       - name: Testes de domínio
@@ -39,7 +40,6 @@ jobs:
           cp app/build/outputs/apk/release/app-release-unsigned.apk build/pacotes/Nox-sem-assinatura.apk
           cp app/build/outputs/apk/debug/app-debug.apk build/pacotes/Nox-dev.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs build/pacotes/Nox-dev.apk
-          if [[ "$GITHUB_HEAD_REF" == "nox-build-1" && "$GITHUB_RUN_ATTEMPT" == "1" ]]; then bash qa/sign-first-build.sh; fi
           (cd build/pacotes && sha256sum *.apk > SHA256SUMS)
       - name: Reter APKs por sete dias
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
