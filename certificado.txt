@@ -1,0 +1,18 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v3.2 scheme (APK Signature Scheme v3.2): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+V2 Signer: certificate DN: CN=Nox - recovery
+V2 Signer: certificate SHA-256 digest: 793fa6c2f658a29c63b00042c687dfd7581b03df569cd0973ef75f62140384a9
+V2 Signer: certificate SHA-1 digest: 852132a7ec7f9831af1ea771c23406745f3a4d9a
+V2 Signer: certificate MD5 digest: f14c86ab97301a8d708729d1fd38cc8f
+V2 Signer: key algorithm: RSA
+V2 Signer: key size (bits): 3072
+V2 Signer: public key SHA-256 digest: 341401e00095b9b0640fd3ba5f93ad62e37c745eb0bbb8dbf70d38702f855436
+V2 Signer: public key SHA-1 digest: 70f8e4c58ea701c996a2040c1cc9745113df7c98
+V2 Signer: public key MD5 digest: 95aea4b013ec93549b4b4a83580b71ba
