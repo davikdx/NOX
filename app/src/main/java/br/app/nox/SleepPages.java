@@ -31,6 +31,7 @@ public final class SleepPages {
     static String clock(int min) {return String.format(Locale.ROOT,"%02d:%02d",min/60,min%60);}
     static String hours(int minutes) {return String.format(Locale.ROOT,"%dh%02d",minutes/60,minutes%60);}
     static String stamp(long t, ZoneId z) {
+        if(t<=0)return "Horário de deitar pendente";
         return DateTimeFormatter.ofPattern("dd/MM • HH:mm",new Locale("pt","BR")).format(Instant.ofEpochMilli(t).atZone(z));
     }
     int wakeMinute(JSONObject c) {return safe(c,"wakeMinute",420,0,1439);}
@@ -66,8 +67,8 @@ public final class SleepPages {
     JSONObject active() {
         JSONObject last=null;
         for(JSONObject n:m.store.all("night")) {
-            if(n.optLong("up")>0 || n.optBoolean("closed") || n.optLong("bed")<=0) continue;
-            if(last==null || last.optLong("bed")<n.optLong("bed")) last=n;
+            if(n.optLong("up")>0 || n.optBoolean("closed") || Math.max(n.optLong("wake"),n.optLong("bed"))<=0) continue;
+            if(last==null || Math.max(last.optLong("wake"),last.optLong("bed"))<Math.max(n.optLong("wake"),n.optLong("bed"))) last=n;
         }
         return last;
     }

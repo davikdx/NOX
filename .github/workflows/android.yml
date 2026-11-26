@@ -43,6 +43,7 @@ jobs:
           cp app/build/outputs/apk/release/app-release-unsigned.apk build/pacotes/Nox-sem-assinatura.apk
           cp app/build/outputs/apk/debug/app-debug.apk build/pacotes/Nox-dev.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs build/pacotes/Nox-dev.apk
+          python3 qa/apk-envelope.py build/pacotes/Nox-sem-assinatura.apk
           (cd build/pacotes && sha256sum *.apk > SHA256SUMS)
       - name: Reter APKs por sete dias
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

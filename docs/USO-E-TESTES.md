@@ -11,13 +11,9 @@ Scheduler calcula ocorrências por dia civil e usa AlarmManager.setAlarmClock co
 # Verificação
 qa/run-unit.sh executa o teste de regras de sono no JDK. qa/device-checks.sh utiliza o pacote de desenvolvimento em perfil limpo e coleta resultados e capturas do emulador. O workflow guarda APKs, certificado, SHA-256, relatório instrumental e imagens conforme as etapas concluídas. Consulte o log da execução para saber o que efetivamente passou. A presença dos scripts por si só não comprova um disparo. Frequência de bateria, Doze prolongado, reinício em vários modelos Galaxy, alto-falante real, acessibilidade com TalkBack e funcionamento em noites consecutivas exigem ensaios adicionais.
 
-# Chave de atualizações
-O pacote de distribuição usa br.app.nox. Para instalar atualizações por cima dele, mantenha a mesma chave e aumente o versionCode. Na compilação inicial, o arquivo assinatura-nox.cms contém a chave PKCS12 e sua senha cifradas para o titular. Guarde o arquivo de recuperação privado recebido separadamente. Com OpenSSL, execute:
-
+# Atualizações assinadas
+O pacote de distribuição usa br.app.nox. Preserve a chave privada entregue ao titular e o certificado público qa/recovery-public.pem. A chave privada fica fora do GitHub. Para uso com o Android Studio, converta-a para PKCS12 no seu computador. O comando pede uma senha para proteger o novo arquivo.
 ```sh
-openssl cms -decrypt -binary -inform DER -in assinatura-nox.cms -inkey Nox-recuperacao-privada.pem -out assinatura.tgz
-tar xzf assinatura.tgz
+openssl pkcs12 -export -name nox -inkey Nox-recuperacao-privada.pem -in qa/recovery-public.pem -out nox.p12
 ```
-
-Use nox.p12 e a senha extraída exclusivamente em ambiente privado. Não os inclua no Git. A variante .dev é isolada e tem sua própria assinatura. Compare certificado.txt ou o resultado de apksigner verify --print-certs antes de distribuir uma atualização.
-
+Configure o Gradle como indicado em COMPILACAO.md e use a mesma chave com um versionCode maior. A variante de desenvolvimento usa br.app.nox.dev e uma chave de depuração separada.

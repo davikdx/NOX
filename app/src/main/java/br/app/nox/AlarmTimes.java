@@ -30,7 +30,7 @@ final class AlarmTimes {
     static long next(int minute, int mask, long after, ZoneId zone, String omitDate) {
         if (mask < 0 || mask > 127) throw new IllegalArgumentException("Dias inválidos");
         LocalDate first = Instant.ofEpochMilli(after).atZone(zone).toLocalDate();
-        for (int i = 0; i <= 8; i++) {
+        for (int i = 0; i <= 14; i++) {
             LocalDate date = first.plusDays(i);
             if (date.toString().equals(omitDate)) continue;
             int day = 1 << (date.getDayOfWeek().getValue() - 1);

@@ -1,3 +1,3 @@
 # Nox
 
-Despertador e diário do sono para Android 10+. Consulte [instalação e uso](docs/USO-E-TESTES.md), [fundamentação](docs/CIENCIA.md) e [compilação](docs/COMPILACAO.md).
+Despertador e diário do sono para Android 10+. [Instalação e uso](docs/USO-E-TESTES.md) · [Fundamentação científica](docs/CIENCIA.md) · [Compilação](docs/COMPILACAO.md).

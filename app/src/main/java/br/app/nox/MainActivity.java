@@ -298,7 +298,8 @@ public class MainActivity extends Activity {
         JSONObject pending=null, last=null; long sum=0; int n=0;
         for(JSONObject night:nights) {
             long bed=night.optLong("bed"), wake=night.optLong("wake");
-            if (bed>0 && bed<=now && !night.optBoolean("closed") && night.optLong("up")==0 && now-bed<=36*3600000L && pending==null) pending=night;
+            long anchor = Math.max(bed,wake);
+            if (anchor>0 && anchor<=now && !night.optBoolean("closed") && night.optLong("up")==0 && now-anchor<=36*3600000L && pending==null) pending=night;
             if(wake<=0) continue;
             if(last==null) last=night;
             int minutes=estimated(night);
