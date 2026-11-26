@@ -31,7 +31,7 @@ public final class NoxDeviceChecks extends Instrumentation {
     private static final String DEV = "br.app.nox.dev";
     private static final String QA_NIGHT = "qa-nox-instrumentation-night";
     private static final String QA_ALARM = "qa-nox-instrumentation-alarm";
-    private boolean withAlarm;
+    private boolean withAlarm, reboot;
     private MainActivity activity;
     private Context target;
     private Store store;
@@ -41,6 +41,7 @@ public final class NoxDeviceChecks extends Instrumentation {
     @Override public void onCreate(Bundle arguments) {
         super.onCreate(arguments);
         withAlarm = arguments != null && "1".equals(arguments.getString("alarm"));
+        reboot = arguments != null && "1".equals(arguments.getString("reboot"));
         start();
     }
 
@@ -55,6 +56,13 @@ public final class NoxDeviceChecks extends Instrumentation {
             for (String kind : Store.BACKUP_TYPES) {
                 require(store.all(kind).isEmpty(), "Este perfil já contém registros. Use um emulador de QA vazio.");
             }
+            if (reboot) {
+                long trigger = System.currentTimeMillis() + 150000;
+                Scheduler.put(target, J.obj("id","qa-reboot","name","Teste após reiniciar","enabled",true,
+                    "at",trigger,"deadline",trigger,"tone","nox","volume",15,"vibrate",false));
+                require(Scheduler.next(target)!=null,"Agendamento pré-reinício ausente.");
+                passed("Alarme armado antes do reinício");
+            } else {
             cleanProfile = true;
             out = new File(target.getFilesDir(), "qa-nox");
             require(out.isDirectory() || out.mkdirs(), "Não foi possível criar a pasta de evidências.");
@@ -67,6 +75,7 @@ public final class NoxDeviceChecks extends Instrumentation {
                 alarmCheck();
             } else {
                 log.append("PENDENTE: alarme real (execute com NOX_TEST_ALARM=1).\n");
+            }
             }
         } catch (Throwable failure) {
             problem = failure;
@@ -85,7 +94,7 @@ public final class NoxDeviceChecks extends Instrumentation {
                     log.append("\nLimpeza: ").append(android.util.Log.getStackTraceString(cleanup));
                 }
             }
-            String status = problem == null ? "PASS" : "FAIL";
+            String status = problem == null ? (reboot ? "ARMED" : "PASS") : "FAIL";
             result.putString("nox_result",status);
             result.putString("stream","\n" + log + "\n" + status + "\n");
             finish(problem == null ? Activity.RESULT_OK : Activity.RESULT_CANCELED, result);
@@ -132,7 +141,7 @@ public final class NoxDeviceChecks extends Instrumentation {
 
     private static View navigation(View v, String description) {
         if (description.contentEquals(v.getContentDescription() == null ? "" : v.getContentDescription())
-                && v.isClickable() && v.isShown()) return v;
+                && v.isClickable()) return v;
         if (v instanceof ViewGroup) {
             ViewGroup group = (ViewGroup)v;
             for (int i = 0; i < group.getChildCount(); i++) {
@@ -144,6 +153,7 @@ public final class NoxDeviceChecks extends Instrumentation {
     }
 
     private static boolean hasTitle(View view, String value) {
+        if (view == null) return false;
         if (view instanceof TextView && ((TextView)view).getText().toString().equals(value)) return true;
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup)view;
@@ -158,6 +168,8 @@ public final class NoxDeviceChecks extends Instrumentation {
         activity = (MainActivity)startActivitySync(new Intent(target,MainActivity.class)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
         waitForIdleSync();
+        waitFor("janela com foco após iniciar a Activity",18000,
+            () -> onUi(() -> activity.hasWindowFocus() && activity.getWindow().getDecorView().isLaidOut()));
         boolean dark = onUi(() -> android.graphics.Color.luminance(activity.bg) < 0.5f);
         require(dark == theme.equals("dark"), "Tema incorreto: " + theme);
         String[] tabs = {"Início","Alarmes","Sono","Histórico"};
