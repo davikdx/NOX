@@ -1,0 +1,14 @@
+OK: Navegação nas quatro abas, tema escuro e capturas do dispositivo
+OK: Navegação nas quatro abas, tema claro e capturas do dispositivo
+OK: Persistência entre instâncias e restauração do backup JSON temporário
+OK: Histórico e PDF multipágina
+OK: Alarme com app em segundo plano, fonte indisponível, reprodução USAGE_ALARM, soneca no limite, segundo disparo e encerramento; primeiro disparo delta=2 ms
+
+OK: Navegação nas quatro abas, tema escuro e capturas do dispositivo
+OK: Navegação nas quatro abas, tema claro e capturas do dispositivo
+OK: Persistência entre instâncias e restauração do backup JSON temporário
+OK: Histórico e PDF multipágina
+OK: Alarme com app em segundo plano, fonte indisponível, reprodução USAGE_ALARM, soneca no limite, segundo disparo e encerramento; primeiro disparo delta=2 ms
+
+PASS
+
