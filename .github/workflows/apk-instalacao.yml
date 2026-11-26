@@ -1,0 +1,51 @@
+name: Instalar APK assinado no Android 10
+on:
+  pull_request:
+    paths: ['.github/workflows/apk-instalacao.yml']
+permissions:
+  contents: read
+jobs:
+  instalar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: nox-entrega-1
+          persist-credentials: false
+      - name: Validar o arquivo da entrega
+        run: sha256sum -c SHA256SUMS
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Instalar e abrir o APK de produção offline
+        run: |
+          set -euo pipefail
+          sdkmanager 'emulator' 'system-images;android-29;default;x86_64'
+          sudo chmod 666 /dev/kvm
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/nox-avds"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd --force -n nox29 -k 'system-images;android-29;default;x86_64' -p "$ANDROID_AVD_HOME/nox29.avd"
+          printf 'avd.ini.encoding=UTF-8\npath=%s/nox29.avd\ntarget=android-29\n' "$ANDROID_AVD_HOME" > "$ANDROID_AVD_HOME/nox29.ini"
+          "$ANDROID_HOME/emulator/emulator" @nox29 -no-window -no-boot-anim -no-snapshot -noaudio -gpu swiftshader -cores 2 -memory 2048 -port 5554 > "$RUNNER_TEMP/emu.log" 2>&1 &
+          pid=$!
+          trap 'tail -20 "$RUNNER_TEMP/emu.log"; timeout 4 adb emu kill || true' EXIT
+          for _ in {1..150}; do
+            kill -0 "$pid"
+            if [[ "$(timeout 4 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == 1 ]]; then break; fi
+            sleep 2
+          done
+          adb shell wm dismiss-keyguard
+          adb shell settings put global airplane_mode_on 1
+          adb shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true
+          adb shell svc wifi disable
+          adb shell svc data disable
+          adb install Nox-1.0.apk
+          adb shell am start -W -n br.app.nox/br.app.nox.MainActivity
+          adb shell uiautomator dump /sdcard/nox.xml
+          adb exec-out cat /sdcard/nox.xml > "$RUNNER_TEMP/nox.xml"
+          grep -q 'Configurar o despertador' "$RUNNER_TEMP/nox.xml"
+          grep -q 'package="br.app.nox"' "$RUNNER_TEMP/nox.xml"
+          echo "PASS: APK assinado instalado e tela inicial aberta em Android 10 em modo avião"
+
