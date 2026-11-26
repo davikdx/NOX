@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application'
+}
+
+def keyPath = providers.environmentVariable('NOX_KEYSTORE').orNull
+def keyAliasValue = providers.environmentVariable('NOX_KEY_ALIAS').orNull
+def storeSecret = providers.environmentVariable('NOX_STORE_PASSWORD').orNull
+def keySecret = providers.environmentVariable('NOX_KEY_PASSWORD').orNull
+def hasSigningKey = [keyPath, keyAliasValue, storeSecret, keySecret].every { it }
+
+android {
+    namespace 'br.app.nox'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'br.app.nox'
+        minSdk 29
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+        testInstrumentationRunner 'br.app.nox.NoxDeviceChecks'
+    }
+
+    signingConfigs {
+        if (hasSigningKey) {
+            release {
+                storeFile file(keyPath)
+                storePassword storeSecret
+                keyAlias keyAliasValue
+                keyPassword keySecret
+                enableV1Signing false
+                enableV2Signing true
+                enableV3Signing true
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix '.dev'
+            versionNameSuffix '-dev'
+        }
+        release {
+            minifyEnabled false
+            if (hasSigningKey) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    androidResources {
+        noCompress += ['wav']
+    }
+    lint {
+        abortOnError true
+    }
+}
