@@ -46,7 +46,7 @@ public final class Sleep {
         ArrayList<Integer> sorted = new ArrayList<>(list);
         Collections.sort(sorted);
         int n = sorted.size();
-        return (sorted.get((n-1)/2) + sorted.get(n/2) + 1) / 2;
+        return Math.floorDiv(sorted.get((n-1)/2) + sorted.get(n/2) + 1, 2);
     }
 
     public static final class Entry {
