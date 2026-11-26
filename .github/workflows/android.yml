@@ -64,7 +64,12 @@ jobs:
           sdkmanager 'emulator' 'system-images;android-35;default;x86_64'
           sudo chmod 666 /dev/kvm
           sudo apt-get update -qq && sudo apt-get install -y -qq libpulse0 libgl1 libxcb-cursor0 libxkbcommon-x11-0 libxcb-xinerama0 libnss3 > /dev/null
-          echo no | avdmanager create avd --force -n nox_ci -k 'system-images;android-35;default;x86_64' -d pixel_6
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/nox-avds"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd --force -n nox_ci -k 'system-images;android-35;default;x86_64' -d pixel_6 -p "$ANDROID_AVD_HOME/nox_ci.avd"
+          test -s "$ANDROID_AVD_HOME/nox_ci.avd/config.ini"
+          printf 'avd.ini.encoding=UTF-8\npath=%s/nox_ci.avd\ntarget=android-35\n' "$ANDROID_AVD_HOME" > "$ANDROID_AVD_HOME/nox_ci.ini"
+          "$ANDROID_HOME/emulator/emulator" -list-avds
           mkdir -p build/device-checks
           avdhome="${ANDROID_AVD_HOME:-$HOME/.android/avd}/nox_ci.avd"
           if [[ -f "$avdhome/config.ini" ]]; then sed -i -e 's/^hw.lcd.width=.*/hw.lcd.width=720/' -e 's/^hw.lcd.height=.*/hw.lcd.height=1560/' -e 's/^disk.dataPartition.size=.*/disk.dataPartition.size=2G/' "$avdhome/config.ini"; fi

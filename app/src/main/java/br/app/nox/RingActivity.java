@@ -40,8 +40,13 @@ public final class RingActivity extends Activity {
         super.onStart();
         IntentFilter f = new IntentFilter(RingService.STATE);
         if (Build.VERSION.SDK_INT>=33) registerReceiver(listener,f,Context.RECEIVER_NOT_EXPORTED);
-        else registerReceiver(listener,f,getPackageName()+".permission.RING_STATE",null);
+        else registerLegacyListener(f);
         render();
+    }
+    // API 29–32 has no NOT_EXPORTED flag. Require this app's signature permission instead.
+    @android.annotation.SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private void registerLegacyListener(IntentFilter filter) {
+        registerReceiver(listener,filter,getPackageName()+".permission.RING_STATE",null);
     }
     @Override protected void onStop() {
         tick.removeCallbacksAndMessages(null);

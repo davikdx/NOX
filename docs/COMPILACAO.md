@@ -11,7 +11,7 @@ O projeto usa a plataforma Android 35, Build-Tools 35.0.0, Android Gradle Plugin
 
 ## Criar a versão de uso diário
 
-Crie uma chave de distribuição pessoal uma única vez. Pelo Android Studio, use **Build → Generate Signed App Bundle or APK → APK → Create new**. Guarde o arquivo em um local privado fora do projeto e faça uma cópia de segurança. Como alternativa, o comando abaixo pede as senhas no terminal e cria um keystore no caminho escolhido.
+Para atualizar o APK entregue, importe a chave original conforme USO-E-TESTES.md. Para uma distribuição independente, crie outra chave uma única vez. Pelo Android Studio, use **Build → Generate Signed App Bundle or APK → APK → Create new**. Guarde o arquivo em um local privado fora do projeto e faça uma cópia de segurança. Como alternativa, o comando abaixo pede as senhas no terminal e cria um keystore no caminho escolhido.
 
 ```powershell
 keytool -genkeypair -keystore C:\Chaves\nox-release.p12 -storetype PKCS12 -alias nox -keyalg RSA -keysize 3072 -validity 10000
