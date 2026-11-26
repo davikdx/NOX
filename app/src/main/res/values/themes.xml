@@ -1,0 +1,27 @@
+<resources>
+    <style name="NoxAmoledDialog" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorBackground">#000000</item>
+        <item name="android:colorBackgroundFloating">#000000</item>
+        <item name="android:windowBackground">@drawable/amoled_dialog</item>
+        <item name="android:colorAccent">#C3B5FF</item>
+    </style>
+    <style name="NoxDark" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:colorBackground">#000000</item>
+        <item name="android:colorBackgroundFloating">#000000</item>
+        <item name="android:alertDialogTheme">@style/NoxAmoledDialog</item>
+        <item name="android:datePickerDialogTheme">@style/NoxAmoledDialog</item>
+        <item name="android:timePickerDialogTheme">@style/NoxAmoledDialog</item>
+        <item name="android:fontFamily">sans</item><item name="android:windowBackground">#000000</item>
+        <item name="android:colorAccent">#C3B5FF</item><item name="android:colorButtonNormal">#000000</item>
+        <item name="android:windowActionModeOverlay">true</item><item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#000000</item><item name="android:navigationBarColor">#000000</item>
+    </style>
+    <style name="NoxLight" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item><item name="android:windowBackground">#F6F5FC</item>
+        <item name="android:colorAccent">#514390</item><item name="android:colorButtonNormal">#E7E2FA</item>
+        <item name="android:windowActionModeOverlay">true</item><item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">#F6F5FC</item><item name="android:navigationBarColor">#F6F5FC</item>
+    </style>
+    <style name="NoxTheme" parent="NoxDark"/>
+</resources>
+

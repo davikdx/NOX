@@ -1,0 +1,38 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <permission android:name="${applicationId}.permission.RING_STATE" android:protectionLevel="signature"/>
+    <uses-permission android:name="${applicationId}.permission.RING_STATE"/>
+    <application android:label="Nox" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
+        android:theme="@style/NoxTheme" android:supportsRtl="true" android:allowBackup="false" android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/extraction_rules">
+        <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity>
+        <activity android:name=".RingActivity" android:exported="false" android:excludeFromRecents="true"
+            android:launchMode="singleTask" android:taskAffinity="br.app.nox.ringing"
+            android:showWhenLocked="true" android:turnScreenOn="true"/>
+        <service android:name=".RingService" android:foregroundServiceType="mediaPlayback" android:stopWithTask="false" android:exported="false"/>
+        <receiver android:name=".AlarmReceiver" android:exported="false"/>
+        <receiver android:name=".ReminderReceiver" android:exported="false"/>
+        <receiver android:name=".RestoreReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.TIME_SET"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+                <action android:name="android.intent.action.DATE_CHANGED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/>
+            </intent-filter>
+        </receiver>
+        <provider android:name=".ReportProvider" android:authorities="${applicationId}.reports"
+            android:exported="false" android:grantUriPermissions="true"/>
+    </application>
+</manifest>
+

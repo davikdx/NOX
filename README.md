@@ -1,3 +1,3 @@
 # Nox
 
-Despertador e diário do sono para Android, em português brasileiro. Aplicativo offline com alarmes nativos, acompanhamento pessoal e exportação local de relatórios.
+Despertador e diário do sono para Android 10+. [Instalação e uso](docs/USO-E-TESTES.md) · [Fundamentação científica](docs/CIENCIA.md) · [Compilação](docs/COMPILACAO.md).

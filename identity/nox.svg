@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108" role="img" aria-labelledby="title"><title id="title">Nox — lua, estrela e colinas</title>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#111b5a"/><stop offset=".55" stop-color="#292475"/><stop offset="1" stop-color="#7143ad"/></linearGradient>
+    <linearGradient id="moon" x1="0" y1="0" x2=".4" y2="1"><stop stop-color="white"/><stop offset=".53" stop-color="#e4e5ff"/><stop offset="1" stop-color="#aba4f0"/></linearGradient>
+    <linearGradient id="far"><stop stop-color="#568af2"/><stop offset=".45" stop-color="#6258de"/><stop offset="1" stop-color="#a274e8"/></linearGradient>
+    <linearGradient id="near"><stop stop-color="#334ac0"/><stop offset="1" stop-color="#593b9e"/></linearGradient>
+    <clipPath id="shape"><rect x="1" y="1" width="106" height="106" rx="27"/></clipPath>
+  </defs>
+  <g clip-path="url(#shape)">
+    <rect width="108" height="108" fill="url(#sky)"/>
+    <g transform="translate(-23,-12) scale(1.21)"><path d="M65,29 C53,31 44,40 43,51 C41,65 52,77 66,78 C77,78 85,72 89,64 C83,68 77,69 70,67 C59,63 55,54 56,45 C57,39 60,34 65,29 Z" fill="url(#moon)"/><path d="M78,32 C79,38 80,40 85,41 C80,42 79,44 78,50 C77,44 76,42 71,41 C76,40 77,38 78,32 Z" fill="#fbf9ff"/></g>
+    <path d="M0,76 C20,69 32,66 48,69 C64,72 77,85 91,83 C101,82 107,74 108,70 L108,108 L0,108 Z" fill="url(#far)"/>
+    <path d="M0,85 C16,79 35,73 52,75 C70,78 84,88 108,80 L108,108 L0,108 Z" fill="url(#near)"/>
+  </g>
+</svg>

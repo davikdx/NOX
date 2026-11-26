@@ -1,0 +1,115 @@
+name: Android Nox
+on:
+  workflow_dispatch:
+    inputs:
+      device_checks:
+        description: Executar testes e capturas em emulador API 35
+        required: false
+        type: boolean
+        default: true
+  pull_request:
+    branches: [main]
+    paths-ignore: ['qa/public-envelope.json', '.github/workflows/entrega.yml', 'docs/**']
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Conferir Gradle Wrapper
+        run: echo '2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - name: Instalar plataforma e ferramentas Android
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+      - name: Testes de domínio
+        run: bash qa/run-unit.sh
+      - name: Compilar aplicativos
+        run: bash gradlew --no-daemon :app:assembleRelease :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Coletar os APKs e verificar assinatura do debug
+        run: |
+          mkdir -p build/pacotes
+          cp app/build/outputs/apk/release/app-release-unsigned.apk build/pacotes/Nox-sem-assinatura.apk
+          cp app/build/outputs/apk/debug/app-debug.apk build/pacotes/Nox-dev.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs build/pacotes/Nox-dev.apk
+          python3 qa/apk-envelope.py build/pacotes/Nox-sem-assinatura.apk
+          (cd build/pacotes && sha256sum *.apk > SHA256SUMS)
+      - name: Reter APKs por sete dias
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pacotes-android
+          path: build/pacotes
+          if-no-files-found: error
+          retention-days: 7
+      - name: Verificar APIs e recursos com Android Lint
+        id: lint
+        run: bash gradlew --no-daemon :app:lintDebug
+      - name: Testar em emulador Android 15
+        if: ${{ !cancelled() && (github.event_name == 'pull_request' || inputs.device_checks) && hashFiles('build/pacotes/Nox-dev.apk') != '' }}
+        timeout-minutes: 25
+        run: |
+          set -euo pipefail
+          sdkmanager 'emulator' 'system-images;android-35;default;x86_64'
+          sudo chmod 666 /dev/kvm
+          sudo apt-get update -qq && sudo apt-get install -y -qq libpulse0 libgl1 libxcb-cursor0 libxkbcommon-x11-0 libxcb-xinerama0 libnss3 > /dev/null
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/nox-avds"
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd --force -n nox_ci -k 'system-images;android-35;default;x86_64' -d pixel_6 -p "$ANDROID_AVD_HOME/nox_ci.avd"
+          test -s "$ANDROID_AVD_HOME/nox_ci.avd/config.ini"
+          printf 'avd.ini.encoding=UTF-8\npath=%s/nox_ci.avd\ntarget=android-35\n' "$ANDROID_AVD_HOME" > "$ANDROID_AVD_HOME/nox_ci.ini"
+          "$ANDROID_HOME/emulator/emulator" -list-avds
+          mkdir -p build/device-checks
+          avdhome="${ANDROID_AVD_HOME:-$HOME/.android/avd}/nox_ci.avd"
+          if [[ -f "$avdhome/config.ini" ]]; then sed -i -e 's/^hw.lcd.width=.*/hw.lcd.width=720/' -e 's/^hw.lcd.height=.*/hw.lcd.height=1560/' -e 's/^disk.dataPartition.size=.*/disk.dataPartition.size=2G/' "$avdhome/config.ini"; fi
+          df -h .
+          "$ANDROID_HOME/emulator/emulator" @nox_ci -no-window -no-boot-anim -no-snapshot -noaudio -gpu swiftshader -cores 2 -memory 2048 -camera-back none -camera-front none -no-metrics -port 5554 > build/device-checks/emulador.log 2>&1 &
+          export ANDROID_SERIAL=emulator-5554
+          emulator_pid=$!
+          trap 'tail -60 build/device-checks/emulador.log; timeout 5 adb emu kill || true' EXIT
+          for _ in {1..180}; do
+            kill -0 "$emulator_pid" || exit 1
+            if [[ "$(timeout 4 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then break; fi
+            sleep 2
+          done
+          timeout 5 adb shell getprop sys.boot_completed | tr -d '\r' | grep -qx 1
+          adb shell settings put global device_provisioned 1
+          adb shell settings put secure user_setup_complete 1
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell input keyevent 224
+          adb shell wm dismiss-keyguard
+          adb install -r app/build/outputs/apk/debug/app-debug.apk
+          adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          adb shell appops set br.app.nox.dev SCHEDULE_EXACT_ALARM allow
+          adb shell pm grant br.app.nox.dev android.permission.POST_NOTIFICATIONS
+          adb shell appops set br.app.nox.dev USE_FULL_SCREEN_INTENT allow
+          if ! NOX_TEST_ALARM=1 bash qa/device-checks.sh; then
+            adb shell dumpsys activity activities | grep -E 'mResumed|topResumed|mLastPaused|mFocused' | tail -14 || true
+            adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp|mDreamingLockscreen' | tail -8 || true
+            adb logcat -d -s AndroidRuntime:E ActivityTaskManager:I Nox:W | tail -80
+            exit 1
+          fi
+          bash qa/reboot-check.sh
+      - name: Reter relatórios e capturas reais
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verificacao-android
+          path: |
+            app/build/reports/lint-results-*
+            build/device-checks/
+          if-no-files-found: warn
+          retention-days: 7
