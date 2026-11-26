@@ -17,6 +17,8 @@ import org.json.JSONObject;
 
 public final class RingActivity extends Activity {
     private static final int BG=0xff111221,WHITE=0xfff5f4ff,SUB=0xffc7c6d9,ACCENT=0xffbcb1ff;
+    private boolean amoled;
+    private int background;
     private final Handler tick = new Handler(Looper.getMainLooper());
     private JSONObject current;
     private Button snooze;
@@ -26,12 +28,15 @@ public final class RingActivity extends Activity {
     };
 
     @Override protected void onCreate(Bundle state) {
+        amoled = MainActivity.useAmoled(this, new Store(this).get("setting","main"));
+        background = amoled ? android.graphics.Color.BLACK : BG;
+        if (amoled) setTheme(R.style.NoxDark);
         super.onCreate(state);
         setShowWhenLocked(true);
         setTurnScreenOn(true);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().setStatusBarColor(BG);
-        getWindow().setNavigationBarColor(BG);
+        getWindow().setStatusBarColor(background);
+        getWindow().setNavigationBarColor(background);
         if (state!=null) review=state.getString("review","");
         render();
         if (!isFinishing()) handle(getIntent());
@@ -70,9 +75,10 @@ public final class RingActivity extends Activity {
     }
     private Button button(LinearLayout parent,String label,int fill,int color,Runnable action) {
         Button b=new Button(this);
-        b.setAllCaps(false); b.setText(label); b.setTextColor(color); b.setTextSize(17);
+        b.setAllCaps(false); b.setText(label); b.setTextColor(amoled && fill == ACCENT ? ACCENT : color); b.setTextSize(17);
         b.setLetterSpacing(0); b.setMinHeight(dp(56)); b.setPadding(dp(12),dp(10),dp(12),dp(10));
-        GradientDrawable shape=new GradientDrawable(); shape.setColor(fill); shape.setCornerRadius(dp(26));
+        GradientDrawable shape=new GradientDrawable(); shape.setColor(amoled ? background : fill);
+        if (amoled) shape.setStroke(dp(1),fill == ACCENT ? ACCENT : SUB); shape.setCornerRadius(dp(26));
         b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x32ffffff),shape,null));
         b.setOnClickListener(v->action.run());
         LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2); lp.topMargin=dp(10);
@@ -95,17 +101,17 @@ public final class RingActivity extends Activity {
             finishAndRemoveTask(); return;
         }
         ScrollView scroll=new ScrollView(this);
-        scroll.setFillViewport(true); scroll.setBackgroundColor(BG); scroll.setFitsSystemWindows(true);
+        scroll.setFillViewport(true); scroll.setBackgroundColor(background); scroll.setFitsSystemWindows(true);
         ViewGroup root = (ViewGroup)findViewById(android.R.id.content);
-        root.setBackgroundColor(BG);
+        root.setBackgroundColor(background);
         if (Build.VERSION.SDK_INT >= 35) scroll.setOnApplyWindowInsetsListener((v,insets)->{
             android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
             v.setPadding(bars.left,bars.top,bars.right,bars.bottom); return WindowInsets.CONSUMED;
         });
         LinearLayout shell=new LinearLayout(this); shell.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(shell,new ScrollView.LayoutParams(-1,-2));
-        FrameLayout hero=new FrameLayout(this); shell.addView(hero,new LinearLayout.LayoutParams(-1,dp(164)));
-        hero.addView(new Nightscape(this,true),new FrameLayout.LayoutParams(-1,-1));
+        FrameLayout hero=new FrameLayout(this); shell.addView(hero,new LinearLayout.LayoutParams(-1,dp(amoled?64:164)));
+        if (!amoled) hero.addView(new Nightscape(this,true),new FrameLayout.LayoutParams(-1,-1));
         TextView brand=text("Nox",22,WHITE,true);
         FrameLayout.LayoutParams brandLp=new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.START);
         brandLp.setMargins(dp(26),dp(22),0,0); hero.addView(brand,brandLp);

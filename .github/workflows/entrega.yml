@@ -1,7 +1,7 @@
 name: Verificar APK de distribuição
 on:
   pull_request:
-    paths: ['qa/public-envelope.json']
+    paths: ['qa/amoled-envelope.json']
 permissions:
   contents: read
   actions: read
@@ -19,7 +19,7 @@ jobs:
           persist-credentials: false
       - name: Selecionar compilação assinada pelo titular
         id: source
-        run: echo "run=$(jq -er '.run|numbers' qa/public-envelope.json)" >> "$GITHUB_OUTPUT"
+        run: echo "run=$(jq -er '.run|numbers' qa/amoled-envelope.json)" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
           github-token: ${{ github.token }}
@@ -30,17 +30,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/entrega
-          python3 qa/apk-envelope.py build/source/Nox-sem-assinatura.apk --public-envelope qa/public-envelope.json --out build/entrega/Nox-1.0.apk
+          python3 qa/apk-envelope.py build/source/Nox-sem-assinatura.apk --public-envelope qa/amoled-envelope.json --out build/entrega/Nox-1.0.1.apk
           signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
-          "$signer" verify --verbose --print-certs build/entrega/Nox-1.0.apk | tee build/entrega/certificado.txt
+          "$signer" verify --verbose --print-certs build/entrega/Nox-1.0.1.apk | tee build/entrega/certificado.txt
           grep -q 'Verified using v2 scheme .*: true' build/entrega/certificado.txt
           fingerprint=$(openssl x509 -in qa/recovery-public.pem -outform der | sha256sum | cut -d' ' -f1)
           grep -Fi "certificate SHA-256 digest: $fingerprint" build/entrega/certificado.txt
-          (cd build/entrega && sha256sum Nox-1.0.apk > SHA256SUMS)
+          (cd build/entrega && sha256sum Nox-1.0.1.apk > SHA256SUMS)
       - name: Preservar arquivo instalável
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: Nox-1.0
+          name: Nox-1.0.1
           path: build/entrega/
       - name: Obter capturas e resultado do emulador
         continue-on-error: true
@@ -59,9 +59,9 @@ jobs:
           if [[ -f build/qa-verificada/build/device-checks/testes.txt ]]; then cp build/qa-verificada/build/device-checks/testes.txt build/entrega/; fi
           for capture in build/qa-verificada/build/device-checks/*.png; do cp "$capture" build/entrega/; done
           cd build/entrega
-          for f in Nox-1.0.apk SHA256SUMS certificado.txt testes.tx[t] *.png; do
+          for f in Nox-1.0.1.apk SHA256SUMS certificado.txt testes.tx[t] *.png; do
             base64 -w0 "$f" > "$RUNNER_TEMP/arquivo.b64"
-            jq -n --arg branch nox-entrega-1 --arg message "Entrega de $f" --rawfile content "$RUNNER_TEMP/arquivo.b64" '{branch:$branch,message:$message,content:$content}' > "$RUNNER_TEMP/entrega.json"
+            jq -n --arg branch nox-entrega-1-0-1 --arg message "Entrega de $f" --rawfile content "$RUNNER_TEMP/arquivo.b64" '{branch:$branch,message:$message,content:$content}' > "$RUNNER_TEMP/entrega.json"
             gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/$f" --input "$RUNNER_TEMP/entrega.json" --silent
           done
 

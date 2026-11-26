@@ -72,6 +72,7 @@ public final class NoxDeviceChecks extends Instrumentation {
             ReportChecks.run(target);
             passed("Histórico e PDF multipágina");
             if (withAlarm) {
+                store.put("setting", J.obj("id","main","theme","dark","onboarded",true));
                 alarmCheck();
             } else {
                 log.append("PENDENTE: alarme real (execute com NOX_TEST_ALARM=1).\n");
@@ -206,6 +207,19 @@ public final class NoxDeviceChecks extends Instrumentation {
         Bitmap b = getUiAutomation().takeScreenshot();
         require(b != null && b.getWidth() > 0 && b.getHeight() > 0, "Captura indisponível.");
         try (FileOutputStream file = new FileOutputStream(new File(out,name+".png"))) {
+            if (name.endsWith("-escuro") || name.equals("alarme-tocando")) {
+                Bitmap pixels = b.getConfig()==Bitmap.Config.HARDWARE ? b.copy(Bitmap.Config.ARGB_8888,false) : b;
+                int black=0, samples=0;
+                for (int y=b.getHeight()/12; y<b.getHeight()*11/12; y+=12) {
+                    for (int x=4; x<b.getWidth(); x+=12) {
+                        if (pixels.getPixel(x,y)==android.graphics.Color.BLACK) black++;
+                        samples++;
+                    }
+                }
+                if (pixels!=b) pixels.recycle();
+                require(black > samples*0.60, "Fundo AMOLED ausente em "+name);
+                passed(name+" · "+(100*black/samples)+"% da amostra em preto puro");
+            }
             require(b.compress(Bitmap.CompressFormat.PNG,100,file),"Falha no PNG.");
         } finally { b.recycle(); }
     }

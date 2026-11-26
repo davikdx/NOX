@@ -48,9 +48,7 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         store = new Store(this);
-        String theme = config().optString("theme","system");
-        dark = theme.equals("dark") || (theme.equals("system") &&
-                (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES);
+        dark = useAmoled(this,config());
         setTheme(dark ? R.style.NoxDark : R.style.NoxLight);
         super.onCreate(state);
         RequestPalette();
@@ -67,12 +65,18 @@ public class MainActivity extends Activity {
         } else route(getIntent());
     }
 
+    static boolean useAmoled(android.content.Context context, JSONObject settings) {
+        String mode = settings == null ? "system" : settings.optString("theme", "system");
+        return mode.equals("dark") || (mode.equals("system") &&
+            (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES);
+    }
+
     private void RequestPalette() {
         ink = dark ? 0xfff5f3ff : 0xff201d36;
         muted = dark ? 0xffbfbbce : 0xff5e5a73;
-        surface = dark ? 0xff212234 : 0xffffffff;
+        surface = dark ? Color.BLACK : 0xffffffff;
         accent = dark ? 0xffc0b2ff : 0xff53428f;
-        bg = dark ? 0xff10111c : 0xfff6f5fc;
+        bg = dark ? Color.BLACK : 0xfff6f5fc;
         border = dark ? 0xff34354a : 0xffdfdce9;
         int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
         if (!dark) flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
@@ -80,6 +84,11 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarContrastEnforced(false);
+        getWindow().setStatusBarContrastEnforced(false);
+        if (android.os.Build.VERSION.SDK_INT >= 30 && getWindow().getInsetsController() != null) {
+            int bars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+            getWindow().getInsetsController().setSystemBarsAppearance(dark ? 0 : bars, bars);
+        }
     }
 
     private void route(Intent intent) {
@@ -164,9 +173,11 @@ public class MainActivity extends Activity {
     public void heading(String value) { TextView t=text(value,20,ink,true); t.setAccessibilityHeading(true); append(t,22); }
     public Button button(String value,Runnable action) {
         Button b = new Button(this); b.setText(value); b.setAllCaps(false); b.setTextSize(16);
-        b.setTextColor(dark?0xff201c39:Color.WHITE); b.setMinHeight(dp(52));
+        b.setTextColor(dark?accent:Color.WHITE); b.setMinHeight(dp(52));
         b.setPadding(dp(16),dp(10),dp(16),dp(10)); b.setElevation(0); b.setStateListAnimator(null);
-        b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x335f5680),shape(accent,24,false),null));
+        GradientDrawable fill = shape(dark ? Color.BLACK : accent,24,false);
+        if (dark) fill.setStroke(dp(1),accent);
+        b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x335f5680),fill,null));
         b.setOnClickListener(v -> action.run()); append(b,12); return b;
     }
     public void card(String title,String subtitle,Runnable action) {
@@ -210,7 +221,7 @@ public class MainActivity extends Activity {
         for(int i=0;i<labels.length;i++) {
             final int dest=i; int color=dest==tab?accent:muted;
             LinearLayout item=new LinearLayout(this); item.setOrientation(LinearLayout.VERTICAL); item.setGravity(Gravity.CENTER);
-            if(dest==tab) item.setBackground(shape(dark?0xff303047:0xffeeebfa,18,false));
+            if(dest==tab) item.setBackground(shape(dark?Color.BLACK:0xffeeebfa,18,dark));
             item.setPadding(0,dp(4),0,dp(4));
             Icon icon=new Icon(i,null,color); item.addView(icon,new LinearLayout.LayoutParams(dp(26),dp(24)));
             TextView name=text(labels[i],12,color,dest==tab); item.addView(name);
@@ -266,11 +277,11 @@ public class MainActivity extends Activity {
 
     private void landscape(String top,String value,boolean dawn) {
         FrameLayout hero=new FrameLayout(this);
-        hero.setBackground(shape(0xff252445,22,false)); hero.setClipToOutline(true);
-        hero.addView(new Nightscape(this,dawn),new FrameLayout.LayoutParams(-1,-1));
+        hero.setBackground(shape(dark?Color.BLACK:0xff252445,22,dark)); hero.setClipToOutline(true);
+        if (!dark) hero.addView(new Nightscape(this,dawn),new FrameLayout.LayoutParams(-1,-1));
         LinearLayout layer=new LinearLayout(this); layer.setOrientation(LinearLayout.VERTICAL);
         layer.setGravity(Gravity.CENTER_VERTICAL); layer.setPadding(dp(20),dp(19),dp(12),dp(18));
-        layer.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xbb16152f,0x00151535}));
+        if (!dark) layer.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xbb16152f,0x00151535}));
         layer.addView(text(top,15,0xfff3eeff,true)); TextView valueView=text(value,34,Color.WHITE,true);
         valueView.setPadding(0,dp(6),0,dp(2)); layer.addView(valueView);
         if (countdownAt > 0 && top.equals("Próximo despertar")) {
@@ -339,7 +350,7 @@ public class MainActivity extends Activity {
         card("Som e soneca","Padrões de música, volume, vibração e repetição.",()->alarms.defaults());
         card("Personalização","Consulte e ajuste os parâmetros usados nas sugestões.",()->sleep.learned());
         card("Lembretes","Rotina noturna e registro de sonolência.",()->sleep.reminders());
-        String[] labels={"Acompanhar o sistema","Claro","Escuro"};
+        String[] labels={"Acompanhar o sistema","Claro","Preto AMOLED"};
         String[] values={"system","light","dark"};
         int index=Arrays.asList(values).indexOf(config().optString("theme","system"));
         card("Aparência",labels[Math.max(index,0)],()->new AlertDialog.Builder(this).setTitle("Aparência")
@@ -350,7 +361,7 @@ public class MainActivity extends Activity {
         card("Excluir histórico","Apagar noites e avaliações diurnas deste aparelho.",()->new AlertDialog.Builder(this)
                 .setTitle("Excluir todo o histórico?").setMessage("As noites, avaliações e registros diurnos serão apagados. Os horários de alarme continuarão programados.")
                 .setNegativeButton("Cancelar",null).setPositiveButton("Excluir histórico",(d,w)->{store.clearHistory();message("Histórico excluído.");settings();}).show());
-        note("Nox 1.0 · Dados no aparelho. A exportação e o compartilhamento dependem de uma ação sua.");
+        note("Nox 1.0.1 · Dados no aparelho. A exportação e o compartilhamento dependem de uma ação sua.");
     }
 
     @Override public void onBackPressed() {
