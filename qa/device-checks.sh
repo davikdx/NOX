@@ -6,5 +6,5 @@ for name in $(adb shell run-as br.app.nox.dev ls files/qa-nox | tr -d '\r'); do
   [[ "$name" =~ ^[a-z-]+\.png$ ]] || continue
   adb exec-out run-as br.app.nox.dev cat "files/qa-nox/$name" > "build/device-checks/$name"
 done
-grep -q 'nox_result=PASS' build/device-checks/testes.txt
+grep -Eq '^PASS[[:space:]]*$' build/device-checks/testes.txt
 

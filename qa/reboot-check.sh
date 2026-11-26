@@ -4,7 +4,7 @@ set -euo pipefail
 [[ "${ANDROID_SERIAL:-}" == emulator-* ]]
 dst=build/device-checks
 adb shell am instrument -w -e reboot 1 br.app.nox.dev.test/br.app.nox.NoxDeviceChecks | tee "$dst/reinicio-preparo.txt"
-grep -q 'nox_result=ARMED' "$dst/reinicio-preparo.txt"
+grep -Eq '^ARMED[[:space:]]*$' "$dst/reinicio-preparo.txt"
 adb reboot
 timeout 120 adb wait-for-device
 timeout 150 bash -c 'until [[ "$(adb shell getprop sys.boot_completed | tr -d "\r")" == "1" ]]; do sleep 1; done'
