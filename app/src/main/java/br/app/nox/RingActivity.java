@@ -40,7 +40,7 @@ public final class RingActivity extends Activity {
         super.onStart();
         IntentFilter f = new IntentFilter(RingService.STATE);
         if (Build.VERSION.SDK_INT>=33) registerReceiver(listener,f,Context.RECEIVER_NOT_EXPORTED);
-        else registerReceiver(listener,f);
+        else registerReceiver(listener,f,getPackageName()+".permission.RING_STATE",null);
         render();
     }
     @Override protected void onStop() {

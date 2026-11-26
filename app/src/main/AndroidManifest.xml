@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <permission android:name="${applicationId}.permission.RING_STATE" android:protectionLevel="signature"/>
+    <uses-permission android:name="${applicationId}.permission.RING_STATE"/>
     <application android:label="Nox" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/NoxTheme" android:supportsRtl="true" android:allowBackup="false" android:fullBackupContent="false"
         android:dataExtractionRules="@xml/extraction_rules">

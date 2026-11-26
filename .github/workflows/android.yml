@@ -9,6 +9,7 @@ on:
         default: true
   pull_request:
     branches: [main]
+    paths-ignore: ['qa/public-envelope.json', '.github/workflows/entrega.yml', 'docs/**']
 
 permissions:
   contents: read
@@ -60,14 +61,25 @@ jobs:
         timeout-minutes: 25
         run: |
           set -euo pipefail
-          sdkmanager 'emulator' 'system-images;android-35;google_apis;x86_64'
+          sdkmanager 'emulator' 'system-images;android-35;default;x86_64'
           sudo chmod 666 /dev/kvm
-          echo no | avdmanager create avd --force -n nox_ci -k 'system-images;android-35;google_apis;x86_64' -d pixel_6
+          sudo apt-get update -qq && sudo apt-get install -y -qq libpulse0 libgl1 libxcb-cursor0 libxkbcommon-x11-0 libxcb-xinerama0 libnss3 > /dev/null
+          echo no | avdmanager create avd --force -n nox_ci -k 'system-images;android-35;default;x86_64' -d pixel_6
           mkdir -p build/device-checks
-          "$ANDROID_HOME/emulator/emulator" @nox_ci -no-window -no-boot-anim -no-snapshot -noaudio -gpu swiftshader_indirect -port 5554 > build/device-checks/emulador.log 2>&1 &
+          avdhome="${ANDROID_AVD_HOME:-$HOME/.android/avd}/nox_ci.avd"
+          if [[ -f "$avdhome/config.ini" ]]; then sed -i -e 's/^hw.lcd.width=.*/hw.lcd.width=720/' -e 's/^hw.lcd.height=.*/hw.lcd.height=1560/' -e 's/^disk.dataPartition.size=.*/disk.dataPartition.size=2G/' "$avdhome/config.ini"; fi
+          df -h .
+          "$ANDROID_HOME/emulator/emulator" @nox_ci -no-window -no-boot-anim -no-snapshot -noaudio -gpu swiftshader -cores 2 -memory 2048 -camera-back none -camera-front none -no-metrics -port 5554 > build/device-checks/emulador.log 2>&1 &
           export ANDROID_SERIAL=emulator-5554
-          trap 'adb emu kill || true' EXIT
-          timeout 420 bash -c 'until adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r" | grep -qx 1; do sleep 2; done'
+          emulator_pid=$!
+          trap 'tail -60 build/device-checks/emulador.log; timeout 5 adb emu kill || true' EXIT
+          for _ in {1..180}; do
+            kill -0 "$emulator_pid" || exit 1
+            if [[ "$(timeout 4 adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then break; fi
+            sleep 2
+          done
+          timeout 5 adb shell getprop sys.boot_completed | tr -d '\r' | grep -qx 1
+          adb shell input keyevent 224
           adb shell wm dismiss-keyguard
           adb install -r app/build/outputs/apk/debug/app-debug.apk
           adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
